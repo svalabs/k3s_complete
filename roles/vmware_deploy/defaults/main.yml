@@ -1,0 +1,13 @@
+---
+# defaults file for vmware_deploy
+vmlist:
+- { name: 'master01', role: 'master'}
+- { name: 'worker01', role: 'worker'}
+- { name: 'worker02', role: 'worker'}
+- { name: 'worker03', role: 'worker'}
+- { name: 'worker04', role: 'worker'}
+- { name: 'worker05', role: 'worker'}
+hetzner_ssh_keys:
+- testsshkeyname
+server_stack: "teststack01"
+ansible_user: root

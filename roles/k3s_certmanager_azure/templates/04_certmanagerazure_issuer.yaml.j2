@@ -1,0 +1,34 @@
+---
+apiVersion: cert-manager.io/v1alpha2
+kind: Issuer
+metadata:
+  name: certmanager-azure # Name of the issuer
+  labels:
+    app.kubernetes.io/name: certmanager-azure
+    app.kubernetes.io/tier: backend
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory # URL of the server 
+    email: {{ letsencrypt_email }} #email of the user that will the notification about the cert 
+    privateKeySecretRef:
+      name: letsencrypt-account-key
+    solvers:
+    - dns01:
+        azuredns:
+          # Service principal clientId (also called appId)
+          clientID: {{ azure_clientID}}
+          # A secretKeyRef to a service principal ClientSecret (password)
+          # ref: https://docs.microsoft.com/en-us/azure/container-service/kubernetes/container-service-kubernetes-service-principal
+          clientSecretSecretRef:
+            name: azurednsclientsecret
+            key: CLIENT_SECRET
+            #CLIENT_SECRET WIRD DURCH kubectl create secret fromliteral=CLIENT_SECRET=GANZGEHEIM ERSTELLT
+          # Azure subscription Id
+          subscriptionID: {{ azure_subscriptionID}}
+          # Azure AD tenant Id
+          tenantID: {{ azure_tenantID }}
+          # ResourceGroup name where dns zone is provisioned
+          resourceGroupName: {{ azure_dns_resourcegroup }}
+          hostedZoneName: {{ azure_hosted_dnszone_name }}
+          # Azure Cloud Environment, default to AzurePublicCloud
+          environment: AzurePublicCloud

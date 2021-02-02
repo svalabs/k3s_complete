@@ -1,0 +1,57 @@
+---
+# tasks file for k3s_init
+
+#master-cluster
+- name: install k3s
+  shell: curl -fL https://get.k3s.io | K3S_TOKEN="{{ k3s_cluster_secret }}" sh -s - --cluster-init --disable servicelb
+  when: role == "master-clusterinit"
+- name: get node-token
+  shell: cat /var/lib/rancher/k3s/server/node-token
+  register: node_token
+  when: role == "master-clusterinit"
+- name: set nodetoken fact
+  set_fact:
+    node_token: "{{ node_token.stdout }}"
+  when: role == "master-clusterinit"
+- name: set clusterinit fact
+  set_fact:
+    clusterinit_ip: "{{ hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }}"
+- name: set clusterinit fact
+  set_fact:
+    clusterinit_ip: "{{ hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }}"
+  when:
+    - role == "master-clusterinit"
+    - use_dns_ovh == true 
+
+- debug:
+    msg: "{{ clusterinit_ip }}"
+  when: role == "master-clusterinit"
+- name: show nodetoken
+  debug:
+    msg: "{{ node_token }}"
+  when: role == "master-clusterinit"
+
+- name: modify k3s.yaml
+  lineinfile:
+    path: /etc/rancher/k3s/k3s.yaml
+    regexp: '^127\.0\.0\.1'
+    line: "server: https://{{ clusterinit_ip }}:6443"
+
+- name: get kubeconfig
+  fetch:
+    dest: "{{ kube_config_dest }}"
+    src: /etc/rancher/k3s/k3s.yaml
+    flat: true
+  when: role == "master-clusterinit"
+
+#master-member
+- name: install k3s
+  shell: curl -fL https://get.k3s.io | K3S_TOKEN="{{ k3s_cluster_secret }}" sh -s - --server https://{{ hostvars[groups['master-clusterinit'][0]]['clusterinit_ip'] }}:6443
+  when: role == "master-member"
+
+#worker
+- name: show master url
+  debug:
+    msg: "{{ hostvars[groups['master-clusterinit'][0]]['clusterinit_ip'] }}"
+- name: install k3s agent
+  shell: curl -sfL https://get.k3s.io | K3S_TOKEN={{ hostvars[groups['master-clusterinit'][0]]['node_token'] }} K3S_URL=https://{{ hostvars[groups['master-clusterinit'][0]]['clusterinit_ip'] }}:6443 sh -s -

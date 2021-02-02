@@ -1,0 +1,6 @@
+---
+# tasks file for vmware_create_image
+- name: create image
+  shell: |
+    cd ./files
+    bash build.sh

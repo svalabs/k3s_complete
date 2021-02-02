@@ -1,0 +1,8 @@
+---
+# tasks file for hetzner_delete
+- name: server
+  hcloud_server:
+    #api_token: "{{ api_token }}"
+    state: "absent"
+    name: "{{ item }}"
+  with_items: "{{ groups['hcloud'] }}"

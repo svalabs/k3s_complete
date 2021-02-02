@@ -1,0 +1,10 @@
+plugin: vmware_vm_inventory
+strict: False
+hostname: vcenter.test.internal
+username: administrator@vsphere.local
+password: SuperTest.!
+validate_certs: False
+with_tags: True
+#properties:
+#    - 'name'
+#    - 'guest.ipAddress'

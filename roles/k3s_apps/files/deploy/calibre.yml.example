@@ -1,0 +1,124 @@
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: calibre
+  labels:
+    app: calibre
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: calibre
+  template:
+    metadata:
+      labels:
+        app: calibre
+        version: v0.0.1
+    spec:
+      containers:
+      - name: calibre
+        image: linuxserver/calibre-web:latest
+        resources:
+          requests:
+            cpu: 200m
+            memory: 500Mi
+          limits:
+            cpu: 500m
+            memory: 1Gi
+        env:
+        - name: TZ
+          value: Europe/Berlin
+        ports:
+        - containerPort: 8083
+        volumeMounts:
+          - name: calibre-pv
+            mountPath: /config
+          - name: ebooks-pv
+            mountPath: /books
+
+      volumes:
+      - name: calibre-pv
+        persistentVolumeClaim:
+          claimName: calibre-pvc
+      - name: ebooks-pv
+        persistentVolumeClaim:
+          claimName: ebooks-pvc
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: calibre-pv
+spec:
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteMany
+  nfs:
+    path: /mnt/BLABLA
+    server: NFS Server IP
+  persistentVolumeReclaimPolicy: Retain
+  claimRef:
+    namespace: default
+    name: calibre-pvc
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: calibre-pvc
+spec:
+  accessModes:
+  - ReadWriteMany
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: calibre
+  annotations:
+    traefik.backend.circuitbreaker: "NetworkErrorRatio() > 0.5"
+spec:
+  ports:
+  - name: http
+    targetPort: 8083
+    port: 8083
+  selector:
+    app: calibre
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: calibre
+  annotations:
+    kubernetes.io/ingress.class: traefik
+    certmanager.k8s.io/issuer: "certmanager-azure"
+    certmanager.k8s.io/acme-challenge-type: dns01
+spec:
+  rules:
+  - host: calibre.dnszone.example.org
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: calibre
+          servicePort: http
+  tls:
+    - hosts:
+        - calibre.dnszone.example.org
+      secretName: calibre.dnszone.example.org-tls
+---
+apiVersion: cert-manager.io/v1alpha2
+kind: Certificate
+metadata:
+  name: calibre.dnszone.example.org-azure-dns
+  namespace: default
+spec:
+  secretName: calibre.dnszone.example.org-tls
+  issuerRef:
+    name: certmanager-azure
+  dnsNames:
+    - calibre.dnszone.example.org

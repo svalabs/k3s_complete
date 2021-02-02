@@ -1,0 +1,14 @@
+---
+# tasks file for configure_database
+- hosts: database
+  vars_files: inventory.yml
+  roles:
+    - role: geerlingguy.mysql
+      become: yes
+      when: server_stack in inventory_hostname
+      vars:
+        mysql_root_password: "{{ mysqldata.mysql_root_password }}"
+        mysql_enabled_on_startup: true
+        mysql_databases: "{{ mysqldata.mysql_databases }}"
+        mysql_users: "{{ mysqldata.mysql_users }}"
+        overwrite_global_mycnf: true

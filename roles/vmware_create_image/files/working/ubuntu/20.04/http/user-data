@@ -1,0 +1,33 @@
+#cloud-config
+autoinstall:
+  version: 1
+  locale: en_US
+  keyboard:
+    layout: en
+    variant: us
+#  network:
+#    network:
+#      version: 2
+#      ethernets:
+#        ens192:
+#          dhcp4: true
+  storage:
+    layout:
+      name: lvm
+  identity:
+    hostname: ubuntu-packer
+    username: ubnt
+    password: $6$Gn26bSlJeoMfuk0R$uqgqx5Dao0FQ73nQS0pzlPOgebtQ4/Cz473aYTO4jmeC6fU0ZGBU43wvZo8c04/2vAp8Hq8pKA9i6W5RhglCh.
+  ssh:
+    install-server: yes
+    allow-pw: true
+    authorized-keys: 
+      - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCi9eAu6KBaShdcL4pxi6/sJp+IS6nCKexcjQdwFLxg+EoiT2MTAnMsjnfi570het+VV+iOigcZLuRwEcAPh6rSQOtpikmpV6WFjzToWq9aUxDrxWsp/iEPHp+sbjrlsdnGvLGY9XhmPs9s5I8xFQbwF6ilhMIQm+RxtGJJuPUWaF+uXo+3CB91A6bK/rjs97iAjrPZRs0vo5hJGqrIGFi3WP9hf8hF9oWz2BiLRYBib3il6lsAl4Ca0sI//gNM0Ztj4gB7qv1+uPz157bk0IZoN285/72l/rUZVSPIwO+QFZFK07FsyVrpAgMlHk65BiSAO4DtolZEArfXRE1g1DH/ mail@example.com
+      - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCrKUtF9+WsqPKaJzT/7jA0Qt8Fr+U/zxKDd/LL/H6UmlySSrE8FIvMarsyDsmUahnpPI4Xjvur30MuM1GEaSLbEA3RibhxWa7xPYqy1GX+8eMuwwSK0n79slHkF8czCGdPDFxKW73TIFdmrNnk4lwz966JMl9vAuKid91eNSDtGCcYWyDklO87FKv08tpyImfh8AaROP/yQsKW55WNwjmFpiK+dVR0B9jmed3LylxsXKTAqHXp/vZBosDX8kld0r1+zxV9999OmSASkrUA1FkpnKeoBXyfGa6B31ZDaXZDyXVDSrmPddbxd0FIImcYyUB9Gdg15/lwPa5S9kxsGZgl eluminare@web01.elu.home
+  user-data:
+    disable_root: false
+  late-commands:
+    - echo 'ubnt ALL=(ALL) NOPASSWD:ALL' > /target/etc/sudoers.d/ubuntu
+    - truncate -s 0 /etc/machine-id
+    - rm -f /var/lib/dbus/machine-id
+

@@ -1,0 +1,27 @@
+---
+# tasks file for install_dependencies
+- name: Install basic packages for Centos/Redhat
+  yum: 
+    state: present
+    name: iscsi-initiator-utils
+  when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
+  
+- name: Install basic packages Debian/Ubuntu
+  apt: 
+    state: present
+    name:
+    - open-iscsi
+    - nfs-common
+  when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
+
+- name: install container-selinux
+  yum:
+    name: container-selinux
+    state: present
+  when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
+  
+- name: install k3s selinux policy
+  yum:
+    name: "{{ k3s_selinux_policy_rpm }}"
+    state: present
+  when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'

@@ -1,0 +1,26 @@
+---
+# tasks file for hetzner_deploy
+  - name: defaults hcloud deployment
+    hcloud_server:
+      #api_token: "{{ api_token }}"
+      image: "centos-7"
+      server_type: "cx21"
+      datacenter: "nbg1-dc3"
+      ssh_keys: "{{ hetzner_ssh_keys }}"
+      state: "present"
+      name: "{{ server_stack }}-{{ item.name }}"
+      labels:
+        stack: "{{ server_stack }}"
+        role: "{{ item.role }}"
+    loop: "{{ vmlist }}"
+    register: hcloud_changed
+
+  - name: wait for server deployment
+    pause:
+      seconds: 30
+    when: hcloud_changed.changed
+
+  #- name: import save dynamic
+  #  import_tasks: save_dynamic_inventory.yml
+  - name: Refresh inventory
+    meta: refresh_inventory

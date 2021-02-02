@@ -1,0 +1,31 @@
+---
+# tasks file for k3s_metallb
+# tasks file for k3s_apps
+- name: deploy metallb namespace
+  shell: |
+    kubectl --kubeconfig {{ kube_config_dest }} apply -f https://raw.githubusercontent.com/metallb/metallb/v0.9.5/manifests/namespace.yaml
+- name: deploy metallb basics
+  shell: |
+    kubectl --kubeconfig {{ kube_config_dest }} apply -f https://raw.githubusercontent.com/metallb/metallb/v0.9.5/manifests/metallb.yaml
+# On first install only
+- name: create metallb initial secret
+  shell: |
+    kubectl --kubeconfig {{ kube_config_dest }} create secret generic -n metallb-system memberlist --from-literal=secretkey="$(openssl rand -base64 128)"
+
+- name: Template a file to /etc/files.conf
+  template:
+    src: configmap.yaml.j2
+    dest: /tmp/metallb_configmap.yaml
+
+- name: create metallb configmap
+  shell: |
+     kubectl --kubeconfig {{ kube_config_dest }} create -f /tmp/metallb_configmap.yaml
+
+- name: remove temporary configmap file
+  file:
+    path: /tmp/metallb_configmap.yaml
+    state: absent
+
+- name: test metallb service as type loadBalancer
+  shell: |
+     kubectl --kubeconfig {{ kube_config_dest }} create -f /files/test-metallb.yaml

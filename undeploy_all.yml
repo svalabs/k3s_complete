@@ -1,0 +1,13 @@
+---
+#delete systems
+- hosts: localhost
+  roles:
+    - vmware_delete
+  when: deployment == "vmware"
+
+- hosts: localhost
+  roles:
+    - hetzner_delete
+  when: deployment == "hetzner"
+
+

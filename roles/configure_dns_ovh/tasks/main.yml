@@ -1,0 +1,13 @@
+---
+# tasks file for configure_dns_ovh
+- name: Get my public IP from ipify.org
+  ipify_facts:
+- name: set dns settings
+  uri:
+    url: "https://www.ovh.com/nic/update?system=dyndns&hostname={{ dns_name }}&myip={{ ipify_public_ip }}"
+    user: "{{ dns_user }}"
+    password: "{{ dns_pass }}"
+    return_content: yes
+  register: ovh_call
+  changed_when: "'good' in ovh_call.content"
+  failed_when: ("good" not in ovh_call.content) and ("nochg {{ ipify_public_ip }}" not in ovh_call.content)

@@ -1,0 +1,10 @@
+plugin: hcloud
+label_selector: stack==STACKNAME!!!
+keyed_groups:
+  - key: labels.role
+    prefix: ""
+    separator: ""
+  - key: labels.stack
+    prefix: ""
+    separator: ""
+

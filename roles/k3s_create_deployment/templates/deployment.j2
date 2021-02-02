@@ -1,0 +1,117 @@
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: {{ app_name }}
+  labels:
+    app: {{ app_name }}
+spec:
+  replicas: {{ replica_count }}
+  selector:
+    matchLabels:
+      app: {{ app_name }}
+  template:
+    metadata:
+      labels:
+        app: {{ app_name }}
+        version: v0.0.1
+    spec:
+      containers:
+      - name: {{ app_name }}
+        image: {{ image }}
+        resources:
+          requests:
+            cpu: {{ cpu_requests }}
+            memory: {{ memory_requests }}
+          limits:
+            cpu: {{ cpu_limits }}
+            memory: {{ memory_limits }}
+        env:
+        - name: TZ
+          value: Europe/Berlin
+        ports:
+        - containerPort: {{ container_port }}
+        volumeMounts:
+          - name: {{ app_name }}-data
+            mountPath: {{ nfs_mount_path }}
+      volumes:
+      - name: {{ app_name }}-data
+        persistentVolumeClaim:
+          claimName: {{ app_name }}-pvc
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: {{ app_name }}-pv
+spec:
+  capacity:
+    storage: {{ pv_storage }}
+  accessModes:
+    - ReadWriteOnce
+  nfs:
+    path: {{ nfs_path }}
+    server: {{ nfs_server }}
+  persistentVolumeReclaimPolicy: Retain
+  claimRef:
+    namespace: default
+    name: {{ app_name }}-pvc
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: {{ app_name }}-pvc
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ pvc_storage }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ app_name }}
+  annotations:
+    traefik.backend.circuitbreaker: "NetworkErrorRatio() > 0.5"
+spec:
+  ports:
+  - name: http
+    targetPort: {{ container_port }}
+    port: {{ container_port }}
+  selector:
+    app: {{ app_name }}
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: {{ app_name }}
+  annotations:
+    kubernetes.io/ingress.class: traefik
+    certmanager.k8s.io/issuer: "{{ ssl_issuer }}"
+    certmanager.k8s.io/acme-challenge-type: "{{ ssl_issue_method }}"
+    ingress.kubernetes.io/ssl-redirect: "true"
+spec:
+  rules:
+  - host: {{ app_name }}.{{ domain_name }}
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: {{ app_name }}
+          servicePort: http
+  tls:
+    - hosts:
+        - {{ app_name }}.{{ domain_name }}
+      secretName: {{ app_name }}.{{ domain_name }}-tls
+---
+apiVersion: cert-manager.io/v1alpha2
+kind: Certificate
+metadata:
+  name: {{ app_name }}.{{ domain_name }}-dns
+  namespace: default
+spec:
+  secretName: {{ app_name }}.{{ domain_name }}-tls
+  issuerRef:
+    name: {{ ssl_issuer }}
+  dnsNames:
+    - {{ app_name }}.{{ domain_name }}

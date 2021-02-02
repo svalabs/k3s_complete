@@ -1,0 +1,4 @@
+---
+# defaults file for hetzner_delete
+server_stack: "teststack01"
+api_token: "placeholder"

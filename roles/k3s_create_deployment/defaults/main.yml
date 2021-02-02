@@ -1,0 +1,19 @@
+---
+# defaults file for k3s_create_deployment
+app_name: navidrome
+image: deluan/navidrome:latest
+container_port: 4533
+cpu_requests: 250m
+memory_requests: 50Mi
+cpu_limits: 500m
+memory_limits: 1024Mi
+replica_count: 2
+nfs_mount_path: /data
+nfs_path: /mnt/S01/K3S/{{ app_name }}
+nfs_server: 192.168.1.148
+pv_storage: 1Gi
+pvc_storage: 1Gi
+domain_name: services.k3s.microserver.ovh
+ssl_issuer: certmanager-azure
+ssl_issue_method: dns01
+dest_file_path: "/tmp/"

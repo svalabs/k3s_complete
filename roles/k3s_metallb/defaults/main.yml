@@ -1,0 +1,4 @@
+---
+# defaults file for k3s_metallb
+metallb_iprange_start: 192.168.150.110
+metallb_iprange_end: 192.168.150.140

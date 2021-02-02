@@ -1,0 +1,23 @@
+---
+#delete systems
+- hosts: localhost
+  roles:
+    - k3s_create_deployment
+  vars:
+    app_name: nginx
+    image: nginx/nginx:latest
+    container_port: 80
+    cpu_requests: 250m
+    memory_requests: 50Mi
+    cpu_limits: 500m
+    memory_limits: 1024Mi
+    replica_count: 1
+    nfs_mount_path: /data
+    nfs_path: /mnt/S01/K3S/{{ app_name }}
+    nfs_server: 192.168.1.123
+    pv_storage: 1Gi
+    pvc_storage: 1Gi
+    domain_name: services.dnszone.example.org
+    dest_file_path: "/tmp/"
+
+

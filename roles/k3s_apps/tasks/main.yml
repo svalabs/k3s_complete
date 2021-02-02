@@ -1,0 +1,5 @@
+---
+#deploy apps
+- name: deploy apps
+  shell: |
+    kubectl --kubeconfig {{ kube_config_dest }} -f files/deploy/

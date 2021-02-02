@@ -1,0 +1,13 @@
+- name: Delete VMs from server stack
+  vmware_guest:
+    hostname: "{{ vmwaredata.vcenter_server }}"
+    username: "{{ vmwaredata.vcenter_user }}"
+    password: "{{ vmwaredata.vcenter_pass }}"
+    validate_certs: False
+    name: "{{ server_stack }}-{{ item.name }}"
+    datacenter: "{{ vmwaredata.datacenter_name }}"
+    folder: "/{{ vmwaredata.datacenter_name }}/vm"
+    esxi_hostname: "{{ vmwaredata.esxi_hostname }}"
+    datastore: "{{ vmwaredata.datastore_name }}"
+    state: absent
+  loop: "{{ vmlist }}"

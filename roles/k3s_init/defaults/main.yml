@@ -1,0 +1,4 @@
+---
+# defaults file for k3s_init
+k3s_selinux_policy_rpm: "https://rpm.rancher.io/k3s-selinux-0.1.1-rc1.el7.noarch.rpm"
+kube_config_dest: "~/.kube/config-{{ server_stack }}"

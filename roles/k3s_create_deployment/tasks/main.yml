@@ -1,0 +1,6 @@
+---
+# tasks file for k3s_create_deployment
+- name: create deployment_file from template
+  template:
+    src: deployment.j2
+    dest: "{{ dest_file_path }}/{{ app_name }}.yml"

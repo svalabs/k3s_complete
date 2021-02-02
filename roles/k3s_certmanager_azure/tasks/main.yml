@@ -1,0 +1,48 @@
+---
+# tasks file for k3s_certmanager_azure
+
+- name: deploy certmanager
+  shell: |
+    kubectl --kubeconfig {{ kube_config_dest }} apply -f https://github.com/jetstack/cert-manager/releases/download/v1.1.0/cert-manager.yaml
+- name: deploy certmanager crds
+  shell: |
+    kubectl --kubeconfig {{ kube_config_dest }} apply -f files/02_cert-manager.crds.yaml
+- name: create azure secret for certmanager
+  shell: |
+    kubectl --kubeconfig {{ kube_config_dest }} create secret generic azurednsclientsecret --from-literal=CLIENT_SECRET="{{ azure_client_secret }}"
+- name: deploy certmanager rolebinding
+  shell: |
+    kubectl --kubeconfig {{ kube_config_dest }} apply -f files/03_certmanagerazure_rolebinding.yaml
+
+- name: create certmanager azure issuer config
+  template:
+    src: 04_certmanagerazure_issuer.yaml.j2
+    dest: /tmp/04_certmanagerazure_issuer.yaml
+
+- name: create certmanager azure test deployment file
+  template:
+    src: 05_test-ingress-certmanagerazure.yaml.j2
+    dest: /tmp/05_test-ingress-certmanagerazure.yaml
+
+- name: deploy certmanager issuer
+  shell: |
+    kubectl --kubeconfig {{ kube_config_dest }} apply -f /tmp/04_certmanagerazure_issuer.yaml
+
+- name: deploy certmanager testcertificate
+  shell: |
+    kubectl --kubeconfig {{ kube_config_dest }} apply -f /tmp/05_test-ingress-certmanagerazure.yaml
+
+- name: remove temporary issuer file
+  file:
+    path: /tmp/04_certmanagerazure_issuer.yaml
+    state: absent
+
+- name: remove temporary test deployment file
+  file:
+    path: /tmp/05_test-ingress-certmanagerazure.yaml
+    state: absent
+
+- name: Test deployment
+  debug:
+    msg: "You should no be able to reach http://test.{{ azure_hosted_dnszone_name }} and https://test.{{ azure_hosted_dnszone_name }}"
+

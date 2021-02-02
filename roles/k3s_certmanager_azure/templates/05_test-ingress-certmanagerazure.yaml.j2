@@ -1,0 +1,34 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: test.{{ azure_hosted_dnszone_name }}
+  namespace: default
+  annotations:
+    kubernetes.io/ingress.class: voyager
+    certmanager.k8s.io/issuer: "certmanager-azure"
+    certmanager.k8s.io/acme-challenge-type: dns01
+spec:
+  tls:
+    - hosts:
+        - test.{{ azure_hosted_dnszone_name }}
+      secretName: test.{{ azure_hosted_dnszone_name }}-tls
+  rules:
+    - host: test.{{ azure_hosted_dnszone_name }}
+      http:
+        paths:
+          - backend:
+              serviceName: web
+              servicePort: 80
+            path: /
+---
+apiVersion: cert-manager.io/v1alpha2
+kind: Certificate
+metadata:
+  name: test.{{ azure_hosted_dnszone_name }}-azure-dns
+  namespace: default
+spec:
+  secretName: test.{{ azure_hosted_dnszone_name }}-tls
+  issuerRef:
+    name: certmanager-azure
+  dnsNames:
+    - test.{{ azure_hosted_dnszone_name }}
