@@ -6,11 +6,11 @@
 #create systems
 - hosts: localhost
   roles:
-    - { role: vmware_deploy, when: "'{{ deployment }}' == vmware"}
+    - { role: vmware_deploy, when: deployment == "vmware"}
 
 - hosts: localhost
   roles:
-    - { role: hetzner_deploy, when: "'{{ deployment }}' == hetzner"}
+    - { role: hetzner_deploy, when: deployment == "hetzner"}
 
 #initiate cluster
 - hosts: master-clusterinit
@@ -61,7 +61,6 @@
 
 #Deploy MySQL
 - hosts: database
-  vars_files: inventory.yml
   roles:
     - role: geerlingguy.mysql
       become: yes

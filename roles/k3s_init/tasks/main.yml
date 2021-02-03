@@ -16,18 +16,18 @@
   when: custom_cloudprovider == true
 
 #init first master
-- include_task: init.yml
+- include_tasks: init.yml
   vars:
     cluster_secret: "{{ k3s_cluster_secret }}"
     master_args: "--cluster-init  {{ k3s_init_noservicelb }} {{ k3s_init_notraefik }} {{ k3s_init_cloudprovider }}"
     agent_args: ""
   when: role == "master-clusterinit"
 
-- include_task: master_facts.yml
+- include_tasks: master_facts.yml
   when: role == "master-clusterinit"
 
 #init master 2-n
-- include_task: init.yml
+- include_tasks: init.yml
   vars:
     cluster_secret: "{{ k3s_cluster_secret }}"
     master_args: "--server https://{{ hostvars[groups['master-clusterinit'][0]]['clusterinit_ip'] }}:6443"
@@ -35,7 +35,7 @@
   when: role == "master-member"
 
 #init worker
-- include_task: init.yml
+- include_tasks: init.yml
   vars:
     cluster_secret: "{{ hostvars[groups['master-clusterinit'][0]]['node_token'] }} K3S_URL=https://{{ hostvars[groups['master-clusterinit'][0]]['clusterinit_ip'] }}"
     master_args: ""

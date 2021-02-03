@@ -17,6 +17,11 @@ This Repository will contain all necessary elements for deploying K3S with multi
   - pyvim
   - pyOpenSSL
   - requests
+  - hcloud
+  - vSphere Automation SDK (pip3 install --upgrade git+https://github.com/vmware/vsphere-automation-sdk-python.git)
+
+## Ansible Galaxy Collections
+```ansible-galaxy install -r requirements.yml```
 
 ## VMware specifiy Requirements
   - please fill in authentication data to vcenter.vmware.yml for using dynamic inventory

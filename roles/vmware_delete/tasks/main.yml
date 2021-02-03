@@ -10,4 +10,5 @@
     esxi_hostname: "{{ vmwaredata.esxi_hostname }}"
     datastore: "{{ vmwaredata.datastore_name }}"
     state: absent
+    force: true
   loop: "{{ vmlist }}"
