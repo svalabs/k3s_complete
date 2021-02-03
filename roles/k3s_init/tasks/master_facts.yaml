@@ -1,0 +1,27 @@
+---
+- name: get node-token
+  shell: cat /var/lib/rancher/k3s/server/node-token
+  register: node_token
+  when: role == "master-clusterinit"
+
+- name: set nodetoken fact
+  set_fact:
+    node_token: "{{ node_token.stdout }}"
+  when: role == "master-clusterinit"
+
+- name: set clusterinit fact
+  set_fact:
+    clusterinit_ip: "{{ hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }}"
+
+- name: modify k3s.yaml
+  lineinfile:
+    path: /etc/rancher/k3s/k3s.yaml
+    regexp: '^127\.0\.0\.1'
+    line: "server: https://{{ clusterinit_ip }}:6443"
+
+- name: get kubeconfig
+  fetch:
+    dest: "{{ kube_config_dest }}"
+    src: /etc/rancher/k3s/k3s.yaml
+    flat: true
+  when: role == "master-clusterinit"

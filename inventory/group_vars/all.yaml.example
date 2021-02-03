@@ -13,7 +13,7 @@ vmlist:
 server_stack: "DC02-K3S-02"
 k3s_cluster_secret: "etrh4w56zr5tezhert5h"
 kube_config_dest: "~/.kube/config-{{ server_stack }}"
-
+no_servicelb: true
 ansible_user: ubnt
 #become_user: root
 #become: true
