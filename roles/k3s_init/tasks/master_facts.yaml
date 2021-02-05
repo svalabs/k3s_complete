@@ -2,12 +2,12 @@
 - name: get node-token
   shell: cat /var/lib/rancher/k3s/server/node-token
   register: node_token
-  when: role == "master-clusterinit"
+  when: role == "master_clusterinit"
 
 - name: set nodetoken fact
   set_fact:
     node_token: "{{ node_token.stdout }}"
-  when: role == "master-clusterinit"
+  when: role == "master_clusterinit"
 
 - name: set clusterinit fact
   set_fact:
@@ -24,4 +24,4 @@
     dest: "{{ kube_config_dest }}"
     src: /etc/rancher/k3s/k3s.yaml
     flat: true
-  when: role == "master-clusterinit"
+  when: role == "master_clusterinit"

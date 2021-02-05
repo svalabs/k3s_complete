@@ -5,15 +5,17 @@
 - name: set servicelb fact
   set_fact:
     k3s_init_noservicelb: "--disable servicelb"
-  when: no_servicelb == true
+  when: no_servicelb == "true"
+
 - name: set traefik fact
   set_fact:
     k3s_init_notraefik: "--disable traefik"
-  when: no_traefik == true
+  when: no_traefik == "true"
+
 - name: set cloudprovider fact
   set_fact:
     k3s_init_cloudprovider: '--disable-cloud-controller --kubelet-arg="cloud-provider=external" --kubelet-arg="provider-id=vsphere://[master_node_id]"'
-  when: custom_cloudprovider == true
+  when: custom_cloudprovider == "true"
 
 #init first master
 - include_tasks: init.yml
@@ -21,27 +23,51 @@
     cluster_secret: "{{ k3s_cluster_secret }}"
     master_args: "--cluster-init  {{ k3s_init_noservicelb }} {{ k3s_init_notraefik }} {{ k3s_init_cloudprovider }}"
     agent_args: ""
-  when: role == "master-clusterinit"
+  when: role == "master_clusterinit"
 
-- include_tasks: master_facts.yml
-  when: role == "master-clusterinit"
+- name: get node-token
+  shell: cat /var/lib/rancher/k3s/server/node-token
+  register: node_token
+  when: role == "master_clusterinit"
+
+- name: set nodetoken fact
+  set_fact:
+    node_token: "{{ node_token.stdout }}"
+  when: role == "master_clusterinit"
+
+- name: set clusterinit fact
+  set_fact:
+    clusterinit_ip: "{{ hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }}"
+  when: role == "master_clusterinit"
+- name: modify k3s.yaml
+  lineinfile:
+    path: /etc/rancher/k3s/k3s.yaml
+    regexp: '127\.0\.0\.1'
+    line: "server: https://{{ clusterinit_ip }}:6443"
+  when: role == "master_clusterinit"
+- name: get kubeconfig
+  fetch:
+    dest: "{{ kube_config_dest }}"
+    src: /etc/rancher/k3s/k3s.yaml
+    flat: true
+  when: role == "master_clusterinit"
 
 #init master 2-n
 - include_tasks: init.yml
   vars:
     cluster_secret: "{{ k3s_cluster_secret }}"
-    master_args: "--server https://{{ hostvars[groups['master-clusterinit'][0]]['clusterinit_ip'] }}:6443"
+    master_args: "--server https://{{ hostvars[groups['_master_clusterinit'][0]]['clusterinit_ip'] }}:6443"
     agent_args: ""
-  when: role == "master-member"
+  when: role == "master_member"
 
 #init worker
 - include_tasks: init.yml
   vars:
-    cluster_secret: "{{ hostvars[groups['master-clusterinit'][0]]['node_token'] }} K3S_URL=https://{{ hostvars[groups['master-clusterinit'][0]]['clusterinit_ip'] }}"
+    cluster_secret: "{{ hostvars[groups['_master_clusterinit'][0]]['node_token'] }} K3S_URL=https://{{ hostvars[groups['_master_clusterinit'][0]]['clusterinit_ip'] }}"
     master_args: ""
-    agent_args: "K3S_URL=https://{{ hostvars[groups['master-clusterinit'][0]]['clusterinit_ip'] }}:6443"
+    agent_args: "K3S_URL=https://{{ hostvars[groups['_master_clusterinit'][0]]['clusterinit_ip'] }}:6443"
   when: role == "worker"
 
 #curl -fL https://get.k3s.io | K3S_TOKEN="{{ k3s_cluster_secret }}" sh -s - --cluster-init --disable servicelb
-#curl -fL https://get.k3s.io | K3S_TOKEN="{{ k3s_cluster_secret }}" sh -s - --server https://{{ hostvars[groups['master-clusterinit'][0]]['clusterinit_ip'] }}:6443
-#curl -sfL https://get.k3s.io | K3S_TOKEN={{ hostvars[groups['master-clusterinit'][0]]['node_token'] }} K3S_URL=https://{{ hostvars[groups['master-clusterinit'][0]]['clusterinit_ip'] }}:6443 sh -s -
+#curl -fL https://get.k3s.io | K3S_TOKEN="{{ k3s_cluster_secret }}" sh -s - --server https://{{ hostvars[groups['master_clusterinit'][0]]['clusterinit_ip'] }}:6443
+#curl -sfL https://get.k3s.io | K3S_TOKEN={{ hostvars[groups['master_clusterinit'][0]]['node_token'] }} K3S_URL=https://{{ hostvars[groups['master_clusterinit'][0]]['clusterinit_ip'] }}:6443 sh -s -

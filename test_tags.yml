@@ -1,0 +1,68 @@
+---
+- hosts: localhost
+  tasks:
+
+  - name: Create category with 2 associable object types
+    community.vmware.vmware_category:
+      hostname: '{{ vmwaredata.vcenter_server }}'
+      username: '{{ vmwaredata.vcenter_user }}'
+      password: '{{ vmwaredata.vcenter_pass }}'
+      category_name: 'k3s'
+      category_description: 'K3S Roles'
+      validate_certs: no
+      associable_object_types:
+      - All objects
+      state: present
+
+  - name: Gather info about tag categories
+    community.vmware.vmware_category_info:
+      hostname: '{{ vmwaredata.vcenter_server }}'
+      username: '{{ vmwaredata.vcenter_user }}'
+      password: '{{ vmwaredata.vcenter_pass }}'
+      validate_certs: no
+    delegate_to: localhost
+    register: all_tag_category_info
+  - debug: var=all_tag_category_info
+  - set_fact:
+      var_category_id: "{{ all_tag_category_info | json_query('tag_category_info | [?category_name == `k3s`].category_id') | first }}"
+
+  - name: Create stack tag
+    community.vmware.vmware_tag:
+      hostname: "{{ vmwaredata.vcenter_server }}"
+      username: "{{ vmwaredata.vcenter_user }}"
+      password: "{{ vmwaredata.vcenter_pass }}"
+      validate_certs: no
+      tag_name: "{{ server_stack }}_{{ item.role }}"
+      category_id: "{{ var_category_id }}"
+      state: present
+    loop: "{{ vmlist }}"
+
+  - name: Add tags to a virtual machine
+    community.vmware.vmware_tag_manager:
+      hostname: '{{ vmwaredata.vcenter_server }}'
+      username: '{{ vmwaredata.vcenter_user }}'
+      password: '{{ vmwaredata.vcenter_pass }}'
+      validate_certs: no
+      tag_names:
+        - "k3s: master_clusterinit"
+      object_name: "testdc02-master01"
+      object_type: VirtualMachine
+      state: add
+
+
+
+#- name: Add tags to a virtual machine
+#  community.vmware.vmware_tag_manager:
+#    hostname: '{{ vmwaredata.vcenter_server }}'
+#    username: '{{ vmwaredata.vcenter_user }}'
+#    password: '{{ vmwaredata.vcenter_pass }}'
+#    validate_certs: no
+#    tag_names:
+#      - "k3s:{{ server_stack }}"
+#    object_name: "{{ server_stack }}-{{ item.name }}"
+#    object_type: VirtualMachine
+#    state: add
+#  loop: "{{ vmlist }}"
+#  delegate_to: localhost
+#
+#

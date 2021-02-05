@@ -1,0 +1,18 @@
+- set_fact:
+    replace_string: "{{ server_stack }}-"
+- set_fact:
+    new_hostname: "{{ inventory_hostname.replace(replace_string,'').split('_')[0] }}"
+
+#Fix for problems in vsphere image template
+- name: change hostname to vmware object name
+  hostname:
+    name: "{{ new_hostname }}"
+  register: hostname_data
+- name: add correct hostname to /etc/hosts
+  lineinfile:
+    dest: /etc/hosts
+    regexp: '^127\.0\.0\.1[ \t]+localhost'
+    line: "127.0.0.1 localhost {{ new_hostname }}"
+    state: present
+- name: reboot for new hostname
+  reboot:
