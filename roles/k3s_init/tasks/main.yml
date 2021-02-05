@@ -43,7 +43,7 @@
   lineinfile:
     path: /etc/rancher/k3s/k3s.yaml
     regexp: '127\.0\.0\.1'
-    line: "server: https://{{ clusterinit_ip }}:6443"
+    line: "    server: https://{{ clusterinit_ip }}:6443" #leading spaces are necessary for yaml
   when: role == "master_clusterinit"
 - name: get kubeconfig
   fetch:

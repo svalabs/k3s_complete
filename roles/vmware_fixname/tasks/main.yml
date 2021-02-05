@@ -8,6 +8,7 @@
   hostname:
     name: "{{ new_hostname }}"
   register: hostname_data
+
 - name: add correct hostname to /etc/hosts
   lineinfile:
     dest: /etc/hosts
@@ -16,4 +17,4 @@
     state: present
 - name: reboot for new hostname
   reboot:
-  when: hostname_data.changed
+#  when: hostname_data.changed

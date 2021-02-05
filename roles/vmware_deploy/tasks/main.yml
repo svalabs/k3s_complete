@@ -51,7 +51,6 @@
         device_type: vmxnet3
         state: present
         dvswitch_name: "{{ vmwaredata.dvswitch_name }}"
-
   loop: "{{ vmlist }}"
   delegate_to: localhost
 
@@ -106,8 +105,13 @@
     tag_names:
       - tag: "{{ server_stack }}"
         category: k3s
+      - tag: "{{ item.role }}"
+        category: k3s
     object_name: "{{ server_stack }}-{{ item.name }}"
     object_type: VirtualMachine
     state: add
   loop: "{{ vmlist }}"
   delegate_to: localhost
+
+- name: Refresh inventory
+  meta: refresh_inventory
