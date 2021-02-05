@@ -5,26 +5,18 @@
 #    - { role: vmware_create_image, when: "'{{ deployment }}' == vmware"}
 #create systems
 - hosts: localhost
+  vars_files: inventory.yaml
   roles:
-    #- { role: vmware_deploy, when: '(deployment == "vmware") and ({{ server_stack }} in inventory_hostname)'}
-    - { role: vmware_deploy, when: (deployment == "vmware")}
-
-- hosts: master_clusterinit:master_member:worker:_master_clusterinit:_master_member:_worker
-  become_user: root
-  become: true
-  roles:
-    #- { role: vmware_fixname, when: '(deployment == "vmware") and ({{ server_stack }} in inventory_hostname)'}
-    - { role: vmware_fixname, when: (deployment == "vmware" and server_stackin inventory_hostname)}
-
-- hosts: localhost
-  roles:
+    - { role: vmware_deploy, when: deployment == 'vmware'}
     - { role: hetzner_deploy, when: deployment == "hetzner"}
 
 #initiate cluster
 - hosts: master_clusterinit:_master_clusterinit
+  vars_files: inventory.yaml
   become_user: root
   become: true
   roles:
+    - { role: vmware_fixname, when: (deployment == "vmware" and server_stackin inventory_hostname)}
     - { role: install_dependencies, when: ( server_stack in inventory_hostname)}
     - { role: configure_dns_ovh, when: ( use_dns_ovh  == 'true')}
     - { role: k3s_init, when: ( server_stack in inventory_hostname)}
@@ -33,19 +25,23 @@
 
 #join cluster master member
 - hosts: master_member:_master_member
+  vars_files: inventory.yaml
   become_user: root
   become: true
   roles:
-    - { role: install_dependencies, when: ( server_stack in inventory_hostname)}
-    - { role: k3s_init, when: ( server_stack in inventory_hostname)}
+    - { role: vmware_fixname, when: (deployment == 'vmware' and server_stackin inventory_hostname)}
+    - { role: install_dependencies, when: (server_stack in inventory_hostname)}
+    - { role: k3s_init, when: (server_stack in inventory_hostname)}
   vars:
     role: master_member
   
 #add worker nodes to cluster
 - hosts: worker:_worker
+  vars_files: inventory.yaml
   become_user: root
   become: true
   roles:
+    - { role: vmware_fixname, when: (deployment == "vmware" and server_stackin inventory_hostname)}
     - { role: install_dependencies, when: ( server_stack in inventory_hostname)}
     - { role: k3s_init, when: ( server_stack in inventory_hostname)}
   vars:

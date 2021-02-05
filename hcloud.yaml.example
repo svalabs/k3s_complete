@@ -1,4 +1,4 @@
-plugin: hcloud
+plugin: hetzner.hcloud.hcloud
 label_selector: stack==STACKNAME!!!
 keyed_groups:
   - key: labels.role

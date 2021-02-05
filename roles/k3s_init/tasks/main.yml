@@ -56,16 +56,16 @@
 - include_tasks: init.yml
   vars:
     cluster_secret: "{{ k3s_cluster_secret }}"
-    master_args: "--server https://{{ hostvars[groups['_master_clusterinit'][0]]['clusterinit_ip'] }}:6443"
+    master_args: "--server https://{{ hostvars[groups['master_clusterinit'][0]]['clusterinit_ip'] }}:6443 {{ k3s_init_noservicelb }} {{ k3s_init_notraefik }}"
     agent_args: ""
   when: role == "master_member"
 
 #init worker
 - include_tasks: init.yml
   vars:
-    cluster_secret: "{{ hostvars[groups['_master_clusterinit'][0]]['node_token'] }} K3S_URL=https://{{ hostvars[groups['_master_clusterinit'][0]]['clusterinit_ip'] }}"
+    cluster_secret: "{{ hostvars[groups['master_clusterinit'][0]]['node_token'] }} K3S_URL=https://{{ hostvars[groups['_master_clusterinit'][0]]['clusterinit_ip'] }}"
     master_args: ""
-    agent_args: "K3S_URL=https://{{ hostvars[groups['_master_clusterinit'][0]]['clusterinit_ip'] }}:6443"
+    agent_args: "K3S_URL=https://{{ hostvars[groups['master_clusterinit'][0]]['clusterinit_ip'] }}:6443"
   when: role == "worker"
 
 #curl -fL https://get.k3s.io | K3S_TOKEN="{{ k3s_cluster_secret }}" sh -s - --cluster-init --disable servicelb
