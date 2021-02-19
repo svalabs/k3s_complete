@@ -4,7 +4,7 @@
     hetzner.hcloud.hcloud_server:
       #api_token: "{{ api_token }}"
       image: "centos-7"
-      server_type: "cx21"
+      server_type: "{{ hetzner_servertype }}"
       datacenter: "nbg1-dc3"
       ssh_keys: "{{ hetzner_ssh_keys }}"
       state: "present"
