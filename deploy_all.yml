@@ -5,72 +5,75 @@
 #    - { role: vmware_create_image, when: "'{{ deployment }}' == vmware"}
 #create systems
 - hosts: localhost
+  vars_files: inventory.yaml
   roles:
-    - { role: vmware_deploy, when: "'{{ deployment }}' == vmware"}
-
-- hosts: localhost
-  roles:
-    - { role: hetzner_deploy, when: "'{{ deployment }}' == hetzner"}
+    - { role: vmware_deploy, when: deployment == 'vmware'}
+    - { role: hetzner_deploy, when: deployment == "hetzner"}
 
 #initiate cluster
-- hosts: master-clusterinit
+- hosts: master_clusterinit:_master_clusterinit
+  vars_files: inventory.yaml
   become_user: root
   become: true
   roles:
-    - install_dependencies
-    - { role: configure_dns_ovh, when: "'{{ use_dns_ovh }}' == true"}
-    - { role: k3s_init, when: "'{{ server_stack }}' in inventory_hostname"}
+    - { role: vmware_fixname, when: (deployment == "vmware" and server_stack in inventory_hostname)}
+    - { role: install_dependencies, when: ( server_stack in inventory_hostname)}
+    - { role: configure_dns_ovh, when: ( use_dns_ovh  == 'true')}
+    - { role: k3s_init, when: ( server_stack in inventory_hostname)}
   vars:
-    role: master-clusterinit
+    role: master_clusterinit
 
 #join cluster master member
-- hosts: master-member
+- hosts: master_member:_master_member
+  vars_files: inventory.yaml
   become_user: root
   become: true
   roles:
-    - install_dependencies
-    - { role: k3s_init, when: "'{{ server_stack }}' in inventory_hostname"}
+    - { role: vmware_fixname, when: (deployment == 'vmware' and server_stack in inventory_hostname)}
+    - { role: install_dependencies, when: (server_stack in inventory_hostname)}
+    - { role: k3s_init, when: (server_stack in inventory_hostname)}
   vars:
-    role: master-member
+    role: master_member
   
 #add worker nodes to cluster
-- hosts: worker
+- hosts: worker:_worker
+  vars_files: inventory.yaml
   become_user: root
   become: true
   roles:
-    - install_dependencies
-    - { role: k3s_init, when: "'{{ server_stack }}' in inventory_hostname"}
+    - { role: vmware_fixname, when: (deployment == "vmware" and server_stack in inventory_hostname)}
+    - { role: install_dependencies, when: ( server_stack in inventory_hostname)}
+    - { role: k3s_init, when: ( server_stack in inventory_hostname)}
   vars:
     role: worker
 
 #Deploy MetalLB
-- hosts: localhost
-  roles:
-    - { role: k3s_metallb, when: "'{{ use_metallb }}' == true"}
+#- hosts: localhost
+#  roles:
+#    - { role: k3s_metallb, when: "'{{ use_metallb }}' == true"}
 
 
 #Deploy CertManager
-- hosts: localhost
-  roles:
-    - { role: k3s_certmanager_azure, when: "'{{ use_azure_dns }}' == true"}
+#- hosts: localhost
+#  roles:
+#    - { role: k3s_certmanager_azure, when: "'{{ use_azure_dns }}' == true"}
 
 #Deploy Apps
-- hosts: localhost
-  roles:
-    - k3s_apps
+#- hosts: localhost
+#  roles:
+#    - k3s_apps
 
 #Deploy MySQL
-- hosts: database
-  vars_files: inventory.yml
-  roles:
-    - role: geerlingguy.mysql
-      become: yes
-      when: server_stack in inventory_hostname
-      vars:
-        mysql_root_password: "{{ mysqldata.mysql_root_password }}"
-        mysql_enabled_on_startup: true
-        mysql_databases: "{{ mysqldata.mysql_databases }}"
-        mysql_users: "{{ mysqldata.mysql_users }}"
-        overwrite_global_mycnf: true
+#- hosts: database:_database
+#  roles:
+#    - role: geerlingguy.mysql
+#      become: yes
+#      when: server_stack in inventory_hostname
+#      vars:
+#        mysql_root_password: "{{ mysqldata.mysql_root_password }}"
+#        mysql_enabled_on_startup: true
+#        mysql_databases: "{{ mysqldata.mysql_databases }}"
+#        mysql_users: "{{ mysqldata.mysql_users }}"
+#        overwrite_global_mycnf: true
 
 

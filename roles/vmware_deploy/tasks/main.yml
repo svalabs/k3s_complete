@@ -1,5 +1,5 @@
 - name: Clone the template
-  vmware_guest:
+  community.vmware.vmware_guest:
     hostname: "{{ vmwaredata.vcenter_server }}"
     username: "{{ vmwaredata.vcenter_user }}"
     password: "{{ vmwaredata.vcenter_pass }}"
@@ -24,15 +24,16 @@
         connected: true
         start_connected: true
     state: poweredon
-    wait_for_ip_address: yes
+#    wait_for_ip_address: yes
     annotation: "{{ item.role }}"
-    customization:
-      hostname: '{{ item.name }}'
-    wait_for_customization: true
+#    customization:
+#      hostname: '{{ item.name }}'
+#    wait_for_customization: false
   loop: "{{ vmlist }}"
+  delegate_to: localhost
 
 - name: set network adapters
-  vmware_guest_network:
+  community.vmware.vmware_guest_network:
     hostname: "{{ vmwaredata.vcenter_server }}"
     username: "{{ vmwaredata.vcenter_user }}"
     password: "{{ vmwaredata.vcenter_pass }}"
@@ -40,6 +41,8 @@
     name: "{{ server_stack }}-{{ item.name }}"
     datacenter: "{{ vmwaredata.datacenter_name }}"
     folder: "/{{ vmwaredata.datacenter_name }}/vm"
+    force: true
+    gather_network_info: true
     esxi_hostname: "{{ vmwaredata.esxi_hostname }}"
     networks:
       - name: '{{ vmwaredata.network_name }}'
@@ -47,70 +50,68 @@
         start_connected: true
         device_type: vmxnet3
         state: present
+        dvswitch_name: "{{ vmwaredata.dvswitch_name }}"
   loop: "{{ vmlist }}"
+  delegate_to: localhost
 
-#- name: Get category id from the given tag
-#  vmware_tag_info:
-#    hostname: '{{ vmwaredata.vcenter_server }}'
-#    username: '{{ vmwaredata.vcenter_user }}'
-#    password: '{{ vmwaredata.vcenter_pass }}'
-#    validate_certs: no
-#  register: tag_details
-#
-#- name: Create stack tag
-#  vmware_tag:
-#    hostname: "{{ vmwaredata.vcenter_server }}"
-#    username: "{{ vmwaredata.vcenter_user }}"
-#    password: "{{ vmwaredata.vcenter_pass }}"
-#    validate_certs: no
-#    tag_name: "{{ server_stack }}"
-#    category_id: "{{ tag_details.tag_facts['k3s']['tag_category_id'] }}"
-#    tag_description: ""
-#    state: present
-
-- name: Add tags to a virtual machine
-  vmware_tag_manager:
+- name: Create tag category
+  community.vmware.vmware_category:
     hostname: '{{ vmwaredata.vcenter_server }}'
     username: '{{ vmwaredata.vcenter_user }}'
     password: '{{ vmwaredata.vcenter_pass }}'
+    category_name: 'k3s'
+    category_description: 'K3S Roles'
     validate_certs: no
-    tag_names:
-      - "k3s:{{ item.role }}"
-    object_name: "{{ server_stack }}-{{ item.name }}"
-    object_type: VirtualMachine
-    state: add
-  loop: "{{ vmlist }}"
-
-
-- name: Add tags to a virtual machine
-  vmware_tag_manager:
-    hostname: '{{ vmwaredata.vcenter_server }}'
-    username: '{{ vmwaredata.vcenter_user }}'
-    password: '{{ vmwaredata.vcenter_pass }}'
-    validate_certs: no
-    tag_names:
-      - "k3s:{{ server_stack }}"
-    object_name: "{{ server_stack }}-{{ item.name }}"
-    object_type: VirtualMachine
-    state: add
-  loop: "{{ vmlist }}"
-
-- set_fact:
-    replace_string: "{{ server_stack }}-"
-- set_fact:
-    new_hostname: "{{ inventory_hostname.replace(replace_string,'').split('_')[0] }}"
-
-#Fix for problems in vsphere image template
-- name: change hostname to vmware object name
-  hostname:
-    name: "{{ new_hostname }}"
-  register: hostname_data
-- name: add correct hostname to /etc/hosts
-  lineinfile:
-    dest: /etc/hosts
-    regexp: '^127\.0\.0\.1[ \t]+localhost'
-    line: "127.0.0.1 localhost {{ new_hostname }}"
+    associable_object_types:
+    - All objects
     state: present
-- name: reboot for new hostname
-  reboot:
-  when: hostname_data.changed
+  delegate_to: localhost
+
+- name: Gather info about tag categories
+  community.vmware.vmware_category_info:
+    hostname: '{{ vmwaredata.vcenter_server }}'
+    username: '{{ vmwaredata.vcenter_user }}'
+    password: '{{ vmwaredata.vcenter_pass }}'
+    validate_certs: no
+  delegate_to: localhost
+  register: all_tag_category_info
+- debug: var=all_tag_category_info
+- set_fact:
+    var_category_id: "{{ all_tag_category_info | json_query('tag_category_info | [?category_name == `k3s`].category_id') | first }}"
+  delegate_to: localhost
+
+- name: Create stack tag
+  community.vmware.vmware_tag:
+    hostname: "{{ vmwaredata.vcenter_server }}"
+    username: "{{ vmwaredata.vcenter_user }}"
+    password: "{{ vmwaredata.vcenter_pass }}"
+    validate_certs: no
+    tag_name: "{{ item }}"
+    category_id: "{{ var_category_id }}"
+    state: present
+  loop:
+    - master_clusterinit
+    - master_member
+    - worker
+    - "{{ server_stack }}"
+  delegate_to: localhost
+
+- name: Add tags to a virtual machine
+  community.vmware.vmware_tag_manager:
+    hostname: '{{ vmwaredata.vcenter_server }}'
+    username: '{{ vmwaredata.vcenter_user }}'
+    password: '{{ vmwaredata.vcenter_pass }}'
+    validate_certs: no
+    tag_names:
+      - tag: "{{ server_stack }}"
+        category: k3s
+      - tag: "{{ item.role }}"
+        category: k3s
+    object_name: "{{ server_stack }}-{{ item.name }}"
+    object_type: VirtualMachine
+    state: add
+  loop: "{{ vmlist }}"
+  delegate_to: localhost
+
+- name: Refresh inventory
+  meta: refresh_inventory

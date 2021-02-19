@@ -1,0 +1,8 @@
+---
+- hosts: localhost
+  tasks:
+
+  - name: Gather hcloud server infos
+    hcloud_server_info:
+    register: output
+  - debug: var=output

@@ -1,13 +1,10 @@
 ---
 #delete systems
 - hosts: localhost
+  vars_files: inventory.yaml
   roles:
-    - vmware_delete
-  when: deployment == "vmware"
+    - {role: vmware_delete, when: (deployment == 'vmware') }
+    - {role: hetzner_delete, when: (deployment == 'hetzner') }
 
-- hosts: localhost
-  roles:
-    - hetzner_delete
-  when: deployment == "hetzner"
 
 

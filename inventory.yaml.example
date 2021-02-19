@@ -1,9 +1,9 @@
 #BASIC VARS
 deployment: "vmware" #hetzner
 vmlist:
-- { name: 'master01', role: 'master-clusterinit'}
-- { name: 'master02', role: 'master-member'}
-- { name: 'master03', role: 'master-member'}
+- { name: 'master01', role: 'master_clusterinit'}
+- { name: 'master02', role: 'master_member'}
+- { name: 'master03', role: 'master_member'}
 - { name: 'worker01', role: 'worker'}
 - { name: 'worker02', role: 'worker'}
 - { name: 'worker03', role: 'worker'}
