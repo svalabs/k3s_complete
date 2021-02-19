@@ -59,7 +59,7 @@
     master_args: "--server https://{{ hostvars[groups['master_clusterinit'][0]]['clusterinit_ip'] }}:6443 {{ k3s_init_noservicelb }} {{ k3s_init_notraefik }}"
     agent_args: ""
   when: role == "master_member"
-  failed_when: false #false positives...
+
 
 #init worker
 - include_tasks: init.yml
