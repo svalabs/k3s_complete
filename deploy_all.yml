@@ -16,7 +16,7 @@
   become_user: root
   become: true
   roles:
-    - { role: vmware_fixname, when: (deployment == "vmware" and server_stackin inventory_hostname)}
+    - { role: vmware_fixname, when: (deployment == "vmware" and server_stack in inventory_hostname)}
     - { role: install_dependencies, when: ( server_stack in inventory_hostname)}
     - { role: configure_dns_ovh, when: ( use_dns_ovh  == 'true')}
     - { role: k3s_init, when: ( server_stack in inventory_hostname)}
@@ -29,7 +29,7 @@
   become_user: root
   become: true
   roles:
-    - { role: vmware_fixname, when: (deployment == 'vmware' and server_stackin inventory_hostname)}
+    - { role: vmware_fixname, when: (deployment == 'vmware' and server_stack in inventory_hostname)}
     - { role: install_dependencies, when: (server_stack in inventory_hostname)}
     - { role: k3s_init, when: (server_stack in inventory_hostname)}
   vars:
@@ -41,7 +41,7 @@
   become_user: root
   become: true
   roles:
-    - { role: vmware_fixname, when: (deployment == "vmware" and server_stackin inventory_hostname)}
+    - { role: vmware_fixname, when: (deployment == "vmware" and server_stack in inventory_hostname)}
     - { role: install_dependencies, when: ( server_stack in inventory_hostname)}
     - { role: k3s_init, when: ( server_stack in inventory_hostname)}
   vars:
