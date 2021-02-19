@@ -34,11 +34,31 @@ This Repository will contain all necessary elements for deploying K3S with multi
   - please specify server_stack name in hcloud.yaml for dynamic inventory
   - Hetzner Cloud LB not implemented. TBD...
 
-# Azure DNS specific Requirements
+## Azure DNS specific Requirements
   - please ensure, that you point a wildcard type A record for all subzones of the desired dns zone to the external traefik ip or otherwise add every service dns name to this ip
   - Working Deployment for each service with lets encrypt intergration and certmanager
   - You have to create an App Registration with the permissions (DNS TXT Contributor) for your DNS Zone
 
-# OVH DNS specifiy Requirements
+## OVH DNS specifiy Requirements
   - until now only used for cluster access, not for deployed services so far
   - will use dyndns feature from ovh (experimental)
+
+
+
+
+
+## HowTo Add Rancher on K3S
+```bash
+helm init
+helm repo add rancher-stable https://releases.rancher.com/server-charts/stable
+kubectl create namespace cattle-system
+kubectl apply --validate=false -f https://github.com/jetstack/cert-manager/releases/download/v1.0.4/cert-manager.crds.yaml
+kubectl create namespace cert-manager
+kubectl create serviceaccount --namespace kube-system tiller
+kubectl create clusterrolebinding tiller-cluster-rule --clusterrole=cluster-admin --serviceaccount=kube-system:tiller
+kubectl patch deploy --namespace kube-system tiller-deploy -p '{"spec":{"template":{"spec":{"serviceAccount":"tiller"}}}}' 
+helm repo update
+helm install --name cert-manager jetstack/cert-manager --namespace cert-manager --version v1.0.4
+#DNS setzen auf ingress
+helm install --name rancher rancher-stable/rancher --namespace cattle-system --set hostname=rancher.demo.sva.rocks --set ingress.tls.source=letsEncrypt --set letsEncrypt.email=your.name@here.de
+```
